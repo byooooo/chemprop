@@ -59,7 +59,6 @@ class MoleculeDatapoint:
                  targets: List[Optional[float]] = None,
                  row: OrderedDict = None,
                  data_weight: float = 1,
-                 embedding_weight: float=1,
                  features: np.ndarray = None,
                  features_generator: List[str] = None,
                  atom_features: np.ndarray = None,
@@ -72,7 +71,6 @@ class MoleculeDatapoint:
         :param targets: A list of targets for the molecule (contains None for unknown target values).
         :param row: The raw CSV row containing the information for this molecule.
         :param data_weight: Weighting of the datapoint for the loss function.
-        :param embedding_weight: Weighting of the datapoint for the embeddings.
         :param features: A numpy array containing additional features (e.g., Morgan fingerprint).
         :param features_generator: A list of features generators to use.
         :param atom_descriptors: A numpy array containing additional atom descriptors to featurize the molecule
@@ -88,7 +86,6 @@ class MoleculeDatapoint:
         self.targets = targets
         self.row = row
         self.data_weight = data_weight
-        self.embedding_weight = embedding_weight
         self.features = features
         self.features_generator = features_generator
         self.atom_descriptors = atom_descriptors
@@ -364,12 +361,6 @@ class MoleculeDataset(Dataset):
         Returns the loss weighting associated with each molecule
         """
         return [d.data_weight for d in self._data]
-
-    def embedding_weights(self) -> List[float]:
-        """
-        Returns the embedding weighting associated with each molecule
-        """
-        return [d.embedding_weight for d in self._data]
 
     def targets(self) -> List[List[Optional[float]]]:
         """

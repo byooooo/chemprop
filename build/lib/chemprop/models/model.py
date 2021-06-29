@@ -70,12 +70,7 @@ class MoleculeModel(nn.Module):
         if args.features_only:
             first_linear_dim = args.features_size
         else:
-            # dim is hidden_size since we take weighted average of embeddings 
-            if args.mpn_weight_embeddings:
-                first_linear_dim = args.hidden_size
-            else:
-                first_linear_dim = args.hidden_size * args.number_of_molecules
-            
+            first_linear_dim = args.hidden_size * args.number_of_molecules
             if args.use_input_features:
                 first_linear_dim += args.features_size
 
@@ -121,7 +116,6 @@ class MoleculeModel(nn.Module):
     def featurize(self,
                   batch: Union[List[List[str]], List[List[Chem.Mol]], List[List[Tuple[Chem.Mol, Chem.Mol]]], List[BatchMolGraph]],
                   features_batch: List[np.ndarray] = None,
-                  embedding_weights_batch: List[np.ndarray] = None,
                   atom_descriptors_batch: List[np.ndarray] = None,
                   atom_features_batch: List[np.ndarray] = None,
                   bond_features_batch: List[np.ndarray] = None) -> torch.FloatTensor:
@@ -133,7 +127,6 @@ class MoleculeModel(nn.Module):
                       The outer list or BatchMolGraph is of length :code:`num_molecules` (number of datapoints in batch),
                       the inner list is of length :code:`number_of_molecules` (number of molecules per datapoint).
         :param features_batch: A list of numpy arrays containing additional features.
-        :param features_batch: A list of numpy arrays containing embedding weights.
         :param atom_descriptors_batch: A list of numpy arrays containing additional atom descriptors.
         :param atom_features_batch: A list of numpy arrays containing additional atom features.
         :param bond_features_batch: A list of numpy arrays containing additional bond features.
@@ -163,7 +156,6 @@ class MoleculeModel(nn.Module):
     def forward(self,
                 batch: Union[List[List[str]], List[List[Chem.Mol]], List[List[Tuple[Chem.Mol, Chem.Mol]]], List[BatchMolGraph]],
                 features_batch: List[np.ndarray] = None,
-                embedding_weights_batch: List[np.ndarray] = None,
                 atom_descriptors_batch: List[np.ndarray] = None,
                 atom_features_batch: List[np.ndarray] = None,
                 bond_features_batch: List[np.ndarray] = None) -> torch.FloatTensor:
@@ -175,7 +167,6 @@ class MoleculeModel(nn.Module):
                       The outer list or BatchMolGraph is of length :code:`num_molecules` (number of datapoints in batch),
                       the inner list is of length :code:`number_of_molecules` (number of molecules per datapoint).
         :param features_batch: A list of numpy arrays containing additional features.
-        :param embedding_weights_batch: A list of numpy arrays containing embedding weights.
         :param atom_descriptors_batch: A list of numpy arrays containing additional atom descriptors.
         :param atom_features_batch: A list of numpy arrays containing additional atom features.
         :param bond_features_batch: A list of numpy arrays containing additional bond features.
@@ -183,9 +174,11 @@ class MoleculeModel(nn.Module):
                  or molecule features if :code:`self.featurizer=True`.
         """
         if self.featurizer:
-            return self.featurize(batch, features_batch, embedding_weights_batch, atom_descriptors_batch, atom_features_batch, bond_features_batch)
+            return self.featurize(batch, features_batch, atom_descriptors_batch,
+                                  atom_features_batch, bond_features_batch)
 
-        output = self.ffn(self.encoder(batch, features_batch, embedding_weights_batch, atom_descriptors_batch, atom_features_batch, bond_features_batch))
+        output = self.ffn(self.encoder(batch, features_batch, atom_descriptors_batch,
+                                       atom_features_batch, bond_features_batch))
 
         # Don't apply sigmoid during training b/c using BCEWithLogitsLoss
         if self.classification and not self.training:

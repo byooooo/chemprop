@@ -10,6 +10,7 @@ from chemprop.args import TrainArgs
 from chemprop.features import BatchMolGraph, get_atom_fdim, get_bond_fdim, mol2graph
 from chemprop.nn_utils import index_select_ND, get_activation_function
 
+import pdb
 
 
 class MPNEncoder(nn.Module):
@@ -56,8 +57,6 @@ class MPNEncoder(nn.Module):
         # Shared weight matrix across depths (default)
         self.W_h = nn.Linear(w_h_input_size, self.hidden_size, bias=self.bias)
 
-
-        print(w_h_input_size)
         self.W_o = nn.Linear(self.atom_fdim + self.hidden_size, self.hidden_size)
 
         # layer after concatenating the descriptors if args.atom_descriptors == descriptors
@@ -178,13 +177,15 @@ class MPN(nn.Module):
         self.overwrite_default_atom_features = args.overwrite_default_atom_features
         self.overwrite_default_bond_features = args.overwrite_default_bond_features
         self.weight_embeddings = args.mpn_weight_embeddings
-        self.number_of_molecules = args.number_of_molecules
 
         if self.features_only:
             return
 
         if args.mpn_shared:
-            self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)] * args.number_of_molecules)
+            if args.mpn_weight_embeddings:
+                self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)])
+            else:
+                self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)] * args.number_of_molecules)
 
         else:
             self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)
@@ -193,7 +194,6 @@ class MPN(nn.Module):
     def forward(self,
                 batch: Union[List[List[str]], List[List[Chem.Mol]], List[List[Tuple[Chem.Mol, Chem.Mol]]], List[BatchMolGraph]],
                 features_batch: List[np.ndarray] = None,
-                embedding_weights_batch: List[np.ndarray] = None,
                 atom_descriptors_batch: List[np.ndarray] = None,
                 atom_features_batch: List[np.ndarray] = None,
                 bond_features_batch: List[np.ndarray] = None) -> torch.FloatTensor:
@@ -205,7 +205,6 @@ class MPN(nn.Module):
                       The outer list or BatchMolGraph is of length :code:`num_molecules` (number of datapoints in batch),
                       the inner list is of length :code:`number_of_molecules` (number of molecules per datapoint).
         :param features_batch: A list of numpy arrays containing additional features.
-        :param embedding_weights_batch: A list of numpy arrays containing additional weights for molecule embeddings.
         :param atom_descriptors_batch: A list of numpy arrays containing additional atom descriptors.
         :param atom_features_batch: A list of numpy arrays containing additional atom features.
         :param bond_features_batch: A list of numpy arrays containing additional bond features.
@@ -264,19 +263,13 @@ class MPN(nn.Module):
             encodings = [enc(ba) for enc, ba in zip(self.encoder, batch)]
 
         if self.weight_embeddings:
-
-            # step 1. normalize the weights
-            normalized_embedding_weights = [w/np.sum(w) for w in embedding_weights_batch]
-            # step 2. first convert list to tensor with torch.Tensor()
-            # step 3. take transpose to match dim with encodings (Tensor.T)
-            # step 4. add 1 dimension to end of tensor (unsqueeze(-1))
-            # step 5. multiply embedding_weights_batch with (row-stacked) encodings row-wise
-            encodings_new = torch.Tensor(normalized_embedding_weights).T.unsqueeze(-1)*torch.stack(encodings)
-            # step 6. take sum of elements in rows
-            output = encodings_new.sum(dim=0)
-            
+            weights = [0.5]*len(encodings)
+            encodings = [x*y for x,y in zip(encodings,weights)]
+            output = reduce(lambda x, y: torch.mean((x, y), dim=1), encodings)
         else:
             output = reduce(lambda x, y: torch.cat((x, y), dim=1), encodings)
+        # pdb.set_trace()
+
 
 
         if self.use_input_features:

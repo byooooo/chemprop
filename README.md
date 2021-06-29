@@ -1,3 +1,47 @@
+# Modification
+
+Adds mixture embedding option, where weights correspond to weighting of each molecule embedding. All weights get normalized and molecules must share embeddings. See (https://github.com/chemprop/chemprop/issues/181) for more detail.
+
+Example:
+```
+python train.py --dataset_type regression --data_path test.csv --number_of_molecules 3 --mpn_shared --mpn_weight_embeddings --embedding_weights_path weights.csv
+```
+
+where `test.csv` contains:
+```
+smiles0,smiles1,smiles2,target
+C,CC,CCC,0.3
+C,CCC,CCO,0.5
+CC,C,CCCCO,0.9
+CCC,CC,CCC,0.3
+CC,CCC,CCO,0.5
+C,C,CCCCO,0.9
+CCCC,CC,CCC,0.3
+CCCC,CCC,CCO,0.5
+CCC,C,CCCCO,0.9
+CCC,CC,CCC,0.3
+C,CCC,CCO,0.5
+CCC,C,CCCCO,0.9
+```
+
+and `weights.csv` contains:
+```
+smiles0,smiles1,smiles2
+0.5,0.25,0.5
+0.5,1,1
+0.25,0.5,0.5
+0.5,0.5,0.25
+0.5,0.25,0.5
+1,1,1
+1,1,1
+1,1,1
+1,1,1
+1,1,1
+1,1,1
+1,1,1
+```
+
+
 # Molecular Property Prediction
 
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/chemprop)](https://badge.fury.io/py/chemprop)
