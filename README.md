@@ -1,6 +1,6 @@
 # Modification
 
-Adds mixture embedding option, where weights correspond to weighting of each molecule embedding. All weights get normalized and molecules must share embeddings. See https://github.com/chemprop/chemprop/issues/181 for more detail.
+Adds mixture embedding option, where weights correspond to weighting of each molecule embedding. All weights get normalized and molecules share embeddings. See https://github.com/chemprop/chemprop/issues/181 for more detail.
 
 Example:
 ```
