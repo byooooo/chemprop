@@ -185,6 +185,9 @@ class MPN(nn.Module):
 
         if args.mpn_shared:
             self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)] * args.number_of_molecules)
+            
+        elif args.mpn_weight_embeddings:
+            self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)] * args.number_of_molecules)
 
         else:
             self.encoder = nn.ModuleList([MPNEncoder(args, self.atom_fdim, self.bond_fdim)
@@ -285,4 +288,6 @@ class MPN(nn.Module):
 
             output = torch.cat([output, features_batch], dim=1)
 
+        # import pdb
+        # pdb.set_trace()
         return output

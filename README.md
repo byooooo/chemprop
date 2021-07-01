@@ -4,7 +4,7 @@ Adds mixture embedding option, where weights correspond to weighting of each mol
 
 Example:
 ```
-python train.py --dataset_type regression --data_path test.csv --number_of_molecules 3 --mpn_shared --mpn_weight_embeddings --embedding_weights_path weights.csv
+python train.py --dataset_type regression --data_path test.csv --number_of_molecules 3 --mpn_weight_embeddings --embedding_weights_path weights.csv
 ```
 
 where `test.csv` contains:
